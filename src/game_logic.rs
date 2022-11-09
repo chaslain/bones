@@ -18,7 +18,6 @@ pub fn score_dice(dice: Vec<i32>) -> (i32, i32) {
     let mut score = 0;
     let mut remaining_dice = dice.len() as i32;
 
-
     let mut quants = get_quants(dice);
 
     for (dice_num, quantity) in quants.iter_mut() {

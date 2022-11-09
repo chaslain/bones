@@ -1,11 +1,4 @@
-use std::{
-    collections::HashMap,
-    fs::File,
-    io::Write,
-    ops::{Add, Range},
-    sync::Arc,
-    thread,
-};
+use std::{collections::HashMap, fs::File, io::Write, ops::Add, sync::Arc, thread};
 
 mod game_logic;
 
@@ -55,7 +48,7 @@ fn main() {
         + master_i
         + master_j;
 
-    totals.save_file();
+    _ = totals.save_file();
 }
 
 fn execute_game(range: i32, aggression_list: Arc<Vec<i32>>) -> impl Fn() -> Master {
@@ -152,7 +145,7 @@ impl Player {
 
             running_total += score;
 
-            if running_total + score >= 5000 {
+            if running_total + score >= WINNING_SCORE {
                 break;
             }
 
