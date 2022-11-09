@@ -28,16 +28,20 @@ pub fn score_dice(dice: Vec<i32>) -> (i32, i32) {
         }
     }
 
-    score += get_score_quantity(&quants, 1, 100);
-    score += get_score_quantity(&quants, 5, 50);
+    let (one_score, dice_consumed) = get_score_quantity(&quants, 1, 100);
+    remaining_dice -= dice_consumed;
+    score += one_score;
+    let (one_score, dice_consumed) = get_score_quantity(&quants, 5, 50);
+    remaining_dice -= dice_consumed;
+    score += one_score;
 
     (score, remaining_dice)
 }
 
-fn get_score_quantity(quants: &HashMap<i32, i32>, num: i32, score: i32) -> i32 {
+fn get_score_quantity(quants: &HashMap<i32, i32>, num: i32, score: i32) -> (i32, i32) {
     match quants.get(&num) {
-        Some(amount) => score * *amount,
-        None => 0,
+        Some(amount) => (score * *amount, *amount),
+        None => (0, 0)
     }
 }
 

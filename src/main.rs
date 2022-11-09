@@ -3,14 +3,14 @@ use std::{collections::HashMap, fs::File, io::Write, ops::Add, sync::Arc, thread
 mod game_logic;
 
 const MIN_SCORE: i32 = 500;
-const WINNING_SCORE: i32 = 5000;
-const NUM_OF_GAMES: i32 = 10000000;
+const WINNING_SCORE: i32 = 10000;
+const NUM_OF_GAMES: i32 = 250000;
 
 fn main() {
     let mut aggression_list: Vec<i32> = Vec::new();
 
-    for i in 1..=50 {
-        aggression_list.push(i * 50);
+    for i in 0..50 {
+        aggression_list.push(i * 10 + 90);
     }
 
     let arc: Arc<Vec<i32>> = Arc::new(aggression_list);
@@ -19,34 +19,16 @@ fn main() {
     let b = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
     let c = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
     let d = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
-    let e = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
-    let f = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
-    let g = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
-    let h = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
-    let i = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
-    let j = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
 
     let master_a: Master = a.join().unwrap();
     let master_b: Master = b.join().unwrap();
     let master_c: Master = c.join().unwrap();
     let master_d: Master = d.join().unwrap();
-    let master_e: Master = e.join().unwrap();
-    let master_f: Master = f.join().unwrap();
-    let master_g: Master = g.join().unwrap();
-    let master_h: Master = h.join().unwrap();
-    let master_i: Master = i.join().unwrap();
-    let master_j: Master = j.join().unwrap();
 
     let totals = master_a
         + master_b
         + master_c
-        + master_d
-        + master_e
-        + master_f
-        + master_g
-        + master_h
-        + master_i
-        + master_j;
+        + master_d;
 
     _ = totals.save_file();
 }
@@ -153,7 +135,7 @@ impl Player {
                 continue;
             }
 
-            if running_total >= self.aggression && self.score + running_total >= MIN_SCORE {
+            if running_total >= self.aggression * dice_amount && self.score + running_total >= MIN_SCORE {
                 break;
             }
         }
