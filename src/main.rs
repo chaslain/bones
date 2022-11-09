@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, io::Write, ops::Add, sync::Arc, thread};
+use std::{collections::HashMap, fs::File, io::Write, ops::Add, sync::Arc, thread::{self, JoinHandle}};
 
 mod game_logic;
 
@@ -15,20 +15,22 @@ fn main() {
 
     let arc: Arc<Vec<i32>> = Arc::new(aggression_list);
 
-    let a = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
-    let b = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
-    let c = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
-    let d = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
+    let mut thread_handles: Vec<JoinHandle<Master>> = Vec::new();
 
-    let master_a: Master = a.join().unwrap();
-    let master_b: Master = b.join().unwrap();
-    let master_c: Master = c.join().unwrap();
-    let master_d: Master = d.join().unwrap();
+    for _ in 0..num_cpus::get() {
+        println!("starting thread with {} games", NUM_OF_GAMES);
+        thread_handles.push(thread::spawn(execute_game(NUM_OF_GAMES, arc.clone())));
+        
+    }
 
-    let totals = master_a
-        + master_b
-        + master_c
-        + master_d;
+    let mut totals = Master {
+        aggression_to_success: HashMap::new()
+    };
+
+    for i in thread_handles {
+        totals = totals + i.join().unwrap();
+    }
+    
 
     _ = totals.save_file();
 }
