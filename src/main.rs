@@ -6,15 +6,19 @@ const MIN_SCORE: i32 = 500;
 const WINNING_SCORE: i32 = 5000;
 
 fn main() {
-    let aggression_list: Vec<i32> = vec![
-        50, 100, 150, 200, 250, 500, 550, 600, 650, 700, 750, 800, 850, 900, 1000, 1050, 1100
-    ];
+    
+    let mut aggression_list: Vec<i32> = Vec::new();
+
+    for i in 1..=50 {
+        aggression_list.push(i * 50);
+    }
+
 
     let mut master = Master {
         aggression_to_success: HashMap::new(),
     };
 
-    for _ in 0..1000000 {
+    for _ in 0..100000000 {
         let mut game = Game::new_game(&aggression_list);
 
         game.play();
