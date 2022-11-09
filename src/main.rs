@@ -1,34 +1,81 @@
-use std::{collections::HashMap, fs::File, io::Write};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::Write,
+    ops::{Add, Range},
+    sync::Arc,
+    thread,
+};
 
 mod game_logic;
 
 const MIN_SCORE: i32 = 500;
 const WINNING_SCORE: i32 = 5000;
+const NUM_OF_GAMES: i32 = 10000000;
 
 fn main() {
-    
     let mut aggression_list: Vec<i32> = Vec::new();
 
     for i in 1..=50 {
         aggression_list.push(i * 50);
     }
 
+    let arc: Arc<Vec<i32>> = Arc::new(aggression_list);
 
-    let mut master = Master {
-        aggression_to_success: HashMap::new(),
-    };
+    let a = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
+    let b = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
+    let c = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
+    let d = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
+    let e = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
+    let f = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
+    let g = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
+    let h = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
+    let i = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
+    let j = thread::spawn(execute_game(NUM_OF_GAMES, arc.clone()));
 
-    for _ in 0..100000000 {
-        let mut game = Game::new_game(&aggression_list);
+    let master_a: Master = a.join().unwrap();
+    let master_b: Master = b.join().unwrap();
+    let master_c: Master = c.join().unwrap();
+    let master_d: Master = d.join().unwrap();
+    let master_e: Master = e.join().unwrap();
+    let master_f: Master = f.join().unwrap();
+    let master_g: Master = g.join().unwrap();
+    let master_h: Master = h.join().unwrap();
+    let master_i: Master = i.join().unwrap();
+    let master_j: Master = j.join().unwrap();
 
-        game.play();
+    let totals = master_a
+        + master_b
+        + master_c
+        + master_d
+        + master_e
+        + master_f
+        + master_g
+        + master_h
+        + master_i
+        + master_j;
 
-        let index = game.winner.unwrap();
-        let player = game.players.get(index as usize).unwrap();
-        master.record_game(player.aggression);
+    totals.save_file();
+}
+
+fn execute_game(range: i32, aggression_list: Arc<Vec<i32>>) -> impl Fn() -> Master {
+    move || -> Master {
+        let mut master = Master {
+            aggression_to_success: HashMap::new(),
+        };
+
+        for _ in 0..range {
+            let mut game = Game::new_game(&*aggression_list);
+
+            game.play();
+
+            let index = game.winner.unwrap();
+            let player = game.players.get(index as usize).unwrap();
+            master.record_game(player.aggression);
+        }
+
+        master
     }
-
-    let _ = master.save_file();
 }
 
 impl Game {
@@ -142,6 +189,24 @@ impl Master {
 
         let mut file = File::create("result.csv").unwrap();
         file.write_all(contents.as_bytes())
+    }
+}
+
+impl Add<Master> for Master {
+    type Output = Master;
+    fn add(mut self, rhs: Master) -> Self::Output {
+        for (aggression, success) in rhs.aggression_to_success {
+            match self.aggression_to_success.get(&aggression) {
+                Some(val) => {
+                    self.aggression_to_success.insert(aggression, val + success);
+                }
+                None => {
+                    self.aggression_to_success.insert(aggression, success);
+                }
+            }
+        }
+
+        self
     }
 }
 
