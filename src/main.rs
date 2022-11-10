@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, io::Write, ops::Add, sync::Arc, thread::{self, JoinHandle}};
+use std::{collections::HashMap, fs::File, io::Write, ops::Add, sync::Arc, thread::{self, JoinHandle}, env};
 
 mod game_logic;
 
@@ -8,6 +8,13 @@ const NUM_OF_GAMES: i32 = 50000;
 
 fn main() {
     let mut aggression_list: Vec<i32> = Vec::new();
+    
+    let args: Vec<String> = env::args().collect();
+
+    let num_threads = args.get(01).unwrap().parse::<i32>().unwrap();
+    let num_games = args.get(2).unwrap().parse::<i32>().unwrap();
+    
+    
 
     for i in 0..50 {
         aggression_list.push(i * 10 + 90);
@@ -17,9 +24,9 @@ fn main() {
 
     let mut thread_handles: Vec<JoinHandle<Master>> = Vec::new();
 
-    for i in 0..num_cpus::get() - 2 {
-        println!("starting thread with {} games", NUM_OF_GAMES);
-        thread_handles.push(thread::spawn(execute_game(NUM_OF_GAMES, arc.clone(), i as i32)));
+    for i in 0..num_threads {
+        println!("starting thread with {} games", num_games);
+        thread_handles.push(thread::spawn(execute_game(num_games, arc.clone(), i as i32)));
         
     }
 
