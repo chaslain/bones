@@ -1,19 +1,37 @@
+use std::time::SystemTime;
 
-use rand::{thread_rng, Rng};
+use rand::{SeedableRng, RngCore};
+use rand_xoshiro::Xoshiro256StarStar;
 
-pub fn roll_dice(dice_num: i32) -> Vec<i32> {
-    let mut thread = thread_rng();
-
-    let mut result: Vec<i32> = Vec::new();
-
-    for _ in 0..dice_num {
-        result.push(thread.gen_range(1..=6));
-    }
-
-    result
+pub struct Rng {
+    gen: Xoshiro256StarStar
 }
 
-pub fn score_dice(dice: Vec<i32>) -> (i32, i32) {
+impl Rng {
+    pub fn roll_dice(&mut self, dice_num: i32) -> [Option<i32>; 5] {
+        let mut result = [None; 5];
+        for i in 0..dice_num {
+            let num = (self.gen.next_u32() % 6) + 1;
+            result[i as usize] = Some(num as i32);
+        }
+    
+        result
+    }
+
+    pub fn new() -> Rng {
+        let start = SystemTime::now();
+        let since_the_epoch = start
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .expect("Time went backwards");
+        
+        Rng {
+            gen: Xoshiro256StarStar::seed_from_u64(since_the_epoch.as_millis() as u64)
+        }
+    }
+}
+
+
+pub fn score_dice(dice: &[Option<i32>; 5]) -> (i32, i32) {
     let mut score: i32 = 0;
     let mut remaining_dice = dice.len() as i32;
 
@@ -42,8 +60,13 @@ fn get_score_quantity(quants: &[i32; 7], num: i32, score: i32) -> (i32, i32) {
 }
 
 
-fn get_quants(dice: &[i32]) -> [i32; 7] {
+fn get_quants(dice: &[Option<i32>; 5]) -> [i32; 7] {
     let mut result = [0; 7];
-    dice.iter().for_each(|i| result[*i as usize] += 1);
+    dice.iter().for_each(|i| {
+        match i {
+            Some(num) => result[*num as usize] += 1,
+            None => {}
+        }
+    });
     result
 }

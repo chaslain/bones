@@ -1,4 +1,6 @@
-use std::{collections::HashMap, fs::File, io::Write, ops::Add, sync::Arc, thread::{self, JoinHandle}, env};
+use std::{collections::HashMap, fs::File, io::Write, ops::Add, sync::Arc, thread::{self, JoinHandle}, env, time::Instant};
+
+use game_logic::Rng;
 
 mod game_logic;
 
@@ -10,8 +12,8 @@ fn main() {
     
     let args: Vec<String> = env::args().collect();
 
-    let num_threads = args.get(01).unwrap().parse::<i32>().unwrap();
-    let num_games = args.get(2).unwrap().parse::<i32>().unwrap();
+    let num_threads = args.get(01).unwrap_or(&"2".to_owned()).parse::<i32>().unwrap_or(2);
+    let num_games = args.get(2).unwrap_or(&"1000".to_owned()).parse::<i32>().unwrap_or(1000);
     
     
 
@@ -34,7 +36,11 @@ fn main() {
     };
 
     for i in thread_handles {
-        totals = totals + i.join().unwrap();
+        match i.join()
+        {
+            Ok(res) => totals = totals + res,
+            Err(e) => panic!("{:?}", e)
+        }
     }
     
 
@@ -43,33 +49,31 @@ fn main() {
 
 fn execute_game(range: i32, aggression_list: Arc<Vec<i32>>, thread_num: i32) -> impl Fn() -> Master {
     move || -> Master {
+        let now = Instant::now();
         let mut master = Master {
             aggression_to_success: HashMap::new(),
         };
 
+        let mut rng = Rng::new();
+
 
         for i in 0..range {
-            let mut game = Game::new_game(&*aggression_list);
+            let mut game = Game::new_game(&*aggression_list, &mut rng);
 
             game.play();
             let index = game.winner.unwrap();
             let player = game.players.get(index as usize).unwrap();
             master.record_game(player.aggression);
-
-            if i % 1000 == 0
-            {
-
-                let mut f = File::create(format!("./{}", thread_num)).unwrap();
-                _ = f.write(i.to_string().as_bytes());
-            }
         }
+
+        println!("finished thread {} in {:?}", thread_num, now.elapsed());
 
         master
     }
 }
 
-impl Game {
-    pub fn new_game(aggressions: &Vec<i32>) -> Game {
+impl<'a> Game<'a> {
+    pub fn new_game(aggressions: &Vec<i32>, rng: &'a mut Rng) -> Game<'a> {
         let mut players: Vec<Player> = Vec::new();
 
         for i in aggressions {
@@ -79,6 +83,7 @@ impl Game {
         Game {
             players,
             winner: None,
+            rng
         }
     }
 
@@ -90,7 +95,7 @@ impl Game {
             for i in 0..self.players.len() as i32 {
                 match self.players.get_mut(i as usize) {
                     Some(player) => {
-                        player.play_turn(is_final);
+                        player.play_turn(is_final, self.rng);
 
                         if player.score > WINNING_SCORE {
                             match lead_player_id {
@@ -115,7 +120,7 @@ impl Game {
     }
 }
 
-impl Player {
+impl Player{
     pub fn new(aggression: i32) -> Player {
         Player {
             aggression,
@@ -123,12 +128,12 @@ impl Player {
         }
     }
 
-    pub fn play_turn(&mut self, is_final: bool) {
+    pub fn play_turn(&mut self, is_final: bool, rng: &mut Rng) {
         let mut dice_amount = 5;
         let mut running_total = 0;
         loop {
-            let dice = game_logic::roll_dice(dice_amount);
-            let (score, dic) = game_logic::score_dice(dice);
+            let dice = rng.roll_dice(dice_amount);
+            let (score, dic) = game_logic::score_dice(&dice);
             dice_amount = dic;
 
             if score == 0 {
@@ -204,9 +209,10 @@ struct Master {
     aggression_to_success: HashMap<i32, i32>,
 }
 
-struct Game {
+struct Game<'a> {
     players: Vec<Player>,
     winner: Option<i32>,
+    rng: &'a mut Rng
 }
 
 struct Player {
