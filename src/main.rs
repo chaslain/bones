@@ -1,4 +1,13 @@
-use std::{collections::HashMap, fs::File, io::Write, ops::Add, sync::Arc, thread::{self, JoinHandle}, env, time::Instant};
+use std::{
+    collections::HashMap,
+    env,
+    fs::File,
+    io::Write,
+    ops::Add,
+    sync::Arc,
+    thread::{self, JoinHandle},
+    time::Instant,
+};
 
 use game_logic::Rng;
 
@@ -9,13 +18,19 @@ const WINNING_SCORE: i32 = 10000;
 
 fn main() {
     let mut aggression_list: Vec<i32> = Vec::new();
-    
+
     let args: Vec<String> = env::args().collect();
 
-    let num_threads = args.get(01).unwrap_or(&"2".to_owned()).parse::<i32>().unwrap_or(2);
-    let num_games = args.get(2).unwrap_or(&"1000".to_owned()).parse::<i32>().unwrap_or(1000);
-    
-    
+    let num_threads = args
+        .get(01)
+        .unwrap_or(&"2".to_owned())
+        .parse::<i32>()
+        .unwrap_or(2);
+    let num_games = args
+        .get(2)
+        .unwrap_or(&"1000".to_owned())
+        .parse::<i32>()
+        .unwrap_or(1000);
 
     for i in 0..50 {
         aggression_list.push(i * 10 + 90);
@@ -27,27 +42,32 @@ fn main() {
 
     for i in 0..num_threads {
         println!("starting thread with {} games", num_games);
-        thread_handles.push(thread::spawn(execute_game(num_games, arc.clone(), i as i32)));
-        
+        thread_handles.push(thread::spawn(execute_game(
+            num_games,
+            arc.clone(),
+            i as i32,
+        )));
     }
 
     let mut totals = Master {
-        aggression_to_success: HashMap::new()
+        aggression_to_success: HashMap::new(),
     };
 
     for i in thread_handles {
-        match i.join()
-        {
+        match i.join() {
             Ok(res) => totals = totals + res,
-            Err(e) => panic!("{:?}", e)
+            Err(e) => panic!("{:?}", e),
         }
     }
-    
 
     _ = totals.save_file();
 }
 
-fn execute_game(range: i32, aggression_list: Arc<Vec<i32>>, thread_num: i32) -> impl Fn() -> Master {
+fn execute_game(
+    range: i32,
+    aggression_list: Arc<Vec<i32>>,
+    thread_num: i32,
+) -> impl Fn() -> Master {
     move || -> Master {
         let now = Instant::now();
         let mut master = Master {
@@ -56,8 +76,7 @@ fn execute_game(range: i32, aggression_list: Arc<Vec<i32>>, thread_num: i32) -> 
 
         let mut rng = Rng::new();
 
-
-        for i in 0..range {
+        for _ in 0..range {
             let mut game = Game::new_game(&*aggression_list, &mut rng);
 
             game.play();
@@ -83,7 +102,7 @@ impl<'a> Game<'a> {
         Game {
             players,
             winner: None,
-            rng
+            rng,
         }
     }
 
@@ -120,7 +139,7 @@ impl<'a> Game<'a> {
     }
 }
 
-impl Player{
+impl Player {
     pub fn new(aggression: i32) -> Player {
         Player {
             aggression,
@@ -155,7 +174,9 @@ impl Player{
                 continue;
             }
 
-            if running_total >= self.aggression * dice_amount && self.score + running_total >= MIN_SCORE {
+            if running_total >= self.aggression * dice_amount
+                && self.score + running_total >= MIN_SCORE
+            {
                 break;
             }
         }
@@ -212,7 +233,7 @@ struct Master {
 struct Game<'a> {
     players: Vec<Player>,
     winner: Option<i32>,
-    rng: &'a mut Rng
+    rng: &'a mut Rng,
 }
 
 struct Player {

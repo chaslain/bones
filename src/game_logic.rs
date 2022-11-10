@@ -1,10 +1,10 @@
 use std::time::SystemTime;
 
-use rand::{SeedableRng, RngCore};
+use rand::{RngCore, SeedableRng};
 use rand_xoshiro::Xoshiro256StarStar;
 
 pub struct Rng {
-    gen: Xoshiro256StarStar
+    gen: Xoshiro256StarStar,
 }
 
 impl Rng {
@@ -14,22 +14,21 @@ impl Rng {
             let num = (self.gen.next_u32() % 6) + 1;
             result[i as usize] = Some(num as i32);
         }
-    
+
         result
     }
 
     pub fn new() -> Rng {
         let start = SystemTime::now();
         let since_the_epoch = start
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .expect("Time went backwards");
-        
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .expect("Time went backwards");
+
         Rng {
-            gen: Xoshiro256StarStar::seed_from_u64(since_the_epoch.as_millis() as u64)
+            gen: Xoshiro256StarStar::seed_from_u64(since_the_epoch.as_millis() as u64),
         }
     }
 }
-
 
 pub fn score_dice(dice: &[Option<i32>; 5]) -> (i32, i32) {
     let mut score: i32 = 0;
@@ -40,7 +39,11 @@ pub fn score_dice(dice: &[Option<i32>; 5]) -> (i32, i32) {
     for (dice_num, quantity) in quants.iter_mut().enumerate() {
         if *quantity >= 3 {
             remaining_dice -= 3;
-            score += if dice_num == 1 { 1000 } else { (dice_num * 100) as i32 };
+            score += if dice_num == 1 {
+                1000
+            } else {
+                (dice_num * 100) as i32
+            };
             *quantity -= 3;
         }
     }
@@ -59,14 +62,11 @@ fn get_score_quantity(quants: &[i32; 7], num: i32, score: i32) -> (i32, i32) {
     (score * quants[num as usize], quants[num as usize])
 }
 
-
 fn get_quants(dice: &[Option<i32>; 5]) -> [i32; 7] {
     let mut result = [0; 7];
-    dice.iter().for_each(|i| {
-        match i {
-            Some(num) => result[*num as usize] += 1,
-            None => {}
-        }
+    dice.iter().for_each(|i| match i {
+        Some(num) => result[*num as usize] += 1,
+        None => {}
     });
     result
 }
