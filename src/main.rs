@@ -4,7 +4,6 @@ mod game_logic;
 
 const MIN_SCORE: i32 = 500;
 const WINNING_SCORE: i32 = 10000;
-const NUM_OF_GAMES: i32 = 50000;
 
 fn main() {
     let mut aggression_list: Vec<i32> = Vec::new();
