@@ -4,7 +4,7 @@ mod game_logic;
 
 const MIN_SCORE: i32 = 500;
 const WINNING_SCORE: i32 = 10000;
-const NUM_OF_GAMES: i32 = 250000;
+const NUM_OF_GAMES: i32 = 50000;
 
 fn main() {
     let mut aggression_list: Vec<i32> = Vec::new();
@@ -17,9 +17,9 @@ fn main() {
 
     let mut thread_handles: Vec<JoinHandle<Master>> = Vec::new();
 
-    for _ in 0..num_cpus::get() {
+    for i in 0..num_cpus::get() - 1 {
         println!("starting thread with {} games", NUM_OF_GAMES);
-        thread_handles.push(thread::spawn(execute_game(NUM_OF_GAMES, arc.clone())));
+        thread_handles.push(thread::spawn(execute_game(NUM_OF_GAMES, arc.clone(), i as i32)));
         
     }
 
@@ -35,20 +35,29 @@ fn main() {
     _ = totals.save_file();
 }
 
-fn execute_game(range: i32, aggression_list: Arc<Vec<i32>>) -> impl Fn() -> Master {
+fn execute_game(range: i32, aggression_list: Arc<Vec<i32>>, thread_num: i32) -> impl Fn() -> Master {
     move || -> Master {
         let mut master = Master {
             aggression_to_success: HashMap::new(),
         };
 
-        for _ in 0..range {
+        println!("beginning {} games", range);
+
+        for i in 0..32 {
+            if i % 10 == 0 {println!("{}", i);}
             let mut game = Game::new_game(&*aggression_list);
 
             game.play();
-
             let index = game.winner.unwrap();
             let player = game.players.get(index as usize).unwrap();
             master.record_game(player.aggression);
+
+            if i % 1000 == 0
+            {
+
+                let mut f = File::create(format!("./{}", thread_num)).unwrap();
+                _ = f.write(i.to_string().as_bytes());
+            }
         }
 
         master
