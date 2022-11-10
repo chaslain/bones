@@ -17,7 +17,7 @@ fn main() {
 
     let mut thread_handles: Vec<JoinHandle<Master>> = Vec::new();
 
-    for i in 0..num_cpus::get() - 1 {
+    for i in 0..num_cpus::get() - 2 {
         println!("starting thread with {} games", NUM_OF_GAMES);
         thread_handles.push(thread::spawn(execute_game(NUM_OF_GAMES, arc.clone(), i as i32)));
         
@@ -41,10 +41,8 @@ fn execute_game(range: i32, aggression_list: Arc<Vec<i32>>, thread_num: i32) -> 
             aggression_to_success: HashMap::new(),
         };
 
-        println!("beginning {} games", range);
 
-        for i in 0..32 {
-            if i % 10 == 0 {println!("{}", i);}
+        for i in 0..range {
             let mut game = Game::new_game(&*aggression_list);
 
             game.play();
